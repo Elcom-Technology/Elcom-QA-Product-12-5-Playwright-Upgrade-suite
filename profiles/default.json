@@ -1,0 +1,17 @@
+{
+  "url": "https://ec12-5.dev.elcomcms.com/cmlogin.aspx?mode=manual",
+  "articleurl_createarticle": "",
+  "CurrentFoldername_createfolder": "test",
+  "articletesname_articleapproval": "testing",
+  "articlenamecurrent_artcileapproval": "testingtest",
+  "formname_formmaintainworkflow": "testtesttest",
+  "currentformname_formcreation": "formname",
+  "Currenturlform_formmaintainworkflow": "test",
+  "foldername": "",
+  "currentarticlename": "",
+  "CurrentEventname": "Test",
+  "CurrentFormNameWorkflow": "Test",
+  "domainname": "https://ec12-5.dev.elcomcms.com/",
+  "CurrentWorkflowName": "test",
+  "credentialsfile": "//192.168.2.25/Common/QA/Katalon-Data/ec12-5-dev-profile - ADMIN.xlsx"
+}

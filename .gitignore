@@ -1,0 +1,11 @@
+node_modules/
+.env
+.state/
+test-results/
+playwright-report/
+
+# Never commit login details or encryption keys
+*.key
+LoginDetails*.xlsx
+# Local working files
+Claude outputs/

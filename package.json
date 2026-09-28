@@ -1,0 +1,19 @@
+{
+  "name": "elcom-upgrade-suite-playwright",
+  "version": "1.0.0",
+  "description": "Elcom 12.5 Upgrade Suite converted from Katalon to Playwright",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "create-login-file": "node scripts/create-login-details.js",
+    "create-key": "node scripts/create-key.js",
+    "encrypt-password": "node scripts/encrypt-password.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0"
+  }
+}
