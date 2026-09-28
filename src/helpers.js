@@ -79,21 +79,29 @@ const CREDENTIAL_LABELS = {
 // Encrypted values in the login details file
 // ---------------------------------------------------------------------------
 // The password is stored encrypted (AES-256-GCM) as  ENC:v1:<iv>:<tag>:<data>  (base64 parts).
-// The key is NOT in the Excel file: it is read from ELCOM_CREDENTIALS_KEY (base64, 32 bytes)
-// or from the key file below, which lives on this machine only (outside OneDrive).
-//   npm run create-key         - makes the key (once per machine; Windows: ELCOM_CREDENTIALS_KEY user env var)
+// The key is NOT in the Excel file. It is read from a key file on the R drive (network share,
+// VPN only), so it is never stored on anyone's machine or in git. Which key file is used:
+//   1. ELCOM_CREDENTIALS_KEY_FILE in .env, if set
+//   2. "credentialskeyfile" in the profile (profiles/<PROFILE>.json)
+//   npm run create-key         - makes the key file there (once for the whole team)
 //   npm run encrypt-password   - asks for a password and prints the ENC:v1:... text for Excel
 const ENC_PREFIX = 'ENC:v1:';
-const KEY_FILE = process.env.ELCOM_CREDENTIALS_KEY_FILE
-  || path.join(require('os').homedir(), 'ElcomAutomation', 'credentials.key');
+
+function keyFile() {
+  const f = process.env.ELCOM_CREDENTIALS_KEY_FILE || loadProfile().credentialskeyfile;
+  if (!f) throw new Error('No key file configured. Set "credentialskeyfile" in profiles/'
+    + (process.env.PROFILE || 'default') + '.json (or ELCOM_CREDENTIALS_KEY_FILE in .env).');
+  return f;
+}
 
 function encryptionKey() {
-  const b64 = process.env.ELCOM_CREDENTIALS_KEY
-    || (fs.existsSync(KEY_FILE) ? fs.readFileSync(KEY_FILE, 'utf8').trim() : '');
-  if (!b64) throw new Error('No encryption key found. Run "npm run create-key" (sets the ELCOM_CREDENTIALS_KEY environment variable),\n'
-    + '  then close and reopen VS Code. Or put the key in ' + KEY_FILE + '.');
-  const key = Buffer.from(b64, 'base64');
-  if (key.length !== 32) throw new Error(`The encryption key in ${process.env.ELCOM_CREDENTIALS_KEY ? 'ELCOM_CREDENTIALS_KEY' : KEY_FILE} is not a 32-byte base64 key.`);
+  const file = keyFile();
+  if (!fs.existsSync(file)) {
+    throw new Error(`Encryption key file not found: ${file}\n`
+      + '  Connect to the VPN so the R drive is reachable (or run "npm run create-key" if the team has no key yet).');
+  }
+  const key = Buffer.from(fs.readFileSync(file, 'utf8').trim(), 'base64');
+  if (key.length !== 32) throw new Error(`The key file ${file} does not hold a 32-byte base64 key.`);
   return key;
 }
 
@@ -295,6 +303,6 @@ function totpNow(base32Secret) {
 
 module.exports = {
   PROJECT_DIR, UPLOAD_DIR, G, credentials, loadCredentials, credentialsFile, LOCAL_CREDENTIALS_FILE, CREDENTIAL_COLUMNS,
-  KEY_FILE, encryptSecret, decryptSecret, isEncrypted, resetGlobals, loadProfile,
+  keyFile, encryptSecret, decryptSecret, isEncrypted, resetGlobals, loadProfile,
   nanoTime, containsIgnoreCase, formatDate, resource, createTimeStampedFile, copyFile, totpNow,
 };

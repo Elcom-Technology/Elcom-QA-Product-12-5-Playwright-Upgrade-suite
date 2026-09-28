@@ -14,6 +14,20 @@ This is the Katalon **UpgradeSuite** (`Test Suites/UpgradeSuite`, 42 test cases)
    ```
 3. Set up the login details file (see **Login details** below).
 
+### New team member (after cloning from git)
+
+Some files are not in git on purpose (see `.gitignore`). Each person creates them on their own machine:
+
+| Not in git | What to do |
+|---|---|
+| `node_modules/` | `npm install` (also downloads the Chromium browser) |
+| `.env` | Nothing – optional, only to change the defaults (copy `.env.example`). |
+| Encryption key | Nothing – read from the R drive (connect to the VPN). |
+| Login details Excel | Nothing to copy if the network share `\\192.168.2.25\Common\QA\Katalon-Data` is reachable. Otherwise ask the lead for the file and set `ELCOM_CREDENTIALS_FILE` in `.env`. |
+| `.state/`, `test-results/`, `playwright-report/` | Nothing – created automatically by each run. |
+
+Check it works: `npx playwright test tests/login.spec.js --headed`
+
 ## Login details
 
 The username and password are read from an Excel file, as in Katalon. The file is never copied into the project.
@@ -37,11 +51,11 @@ The username and password are read from an Excel file, as in Katalon. The file i
 
 **The password must be encrypted.** The password cell holds `ENC:v1:…` text, not the password itself. The tests decrypt it just before logging in; a plain password stops the run with a message. (`totpsecret` and `newuserpassword` may be encrypted the same way; plain values are still accepted for those two.)
 
-1. `npm run create-key` – once per machine. On Windows it saves a new key in your Windows user environment variable `ELCOM_CREDENTIALS_KEY` (never printed); close and reopen VS Code afterwards. `npm run create-key -- --file` saves it to `C:\Users\<you>\ElcomAutomation\credentials.key` instead. It never replaces an existing key.
+1. `npm run create-key` – once for the whole team. Creates the key file on the R drive (`credentialskeyfile` in the profile, default `\\192.168.2.25\Common\QA\Katalon-Data\credentials.key`; or `ELCOM_CREDENTIALS_KEY_FILE` in `.env`). The key is never printed and never stored on anyone's machine; the VPN must be connected to run tests.
 2. `npm run encrypt-password` – type the password twice (it is hidden). It prints the `ENC:v1:…` text.
 3. Paste that text into the password cell of the login details file and save.
 
-The encryption is AES-256-GCM. The key is kept apart from the Excel file, so the file alone does not reveal the password. Anyone running the tests on another machine needs the same key (share it securely), or must encrypt the password again with their own key. If the key is lost, run steps 1–3 again.
+The encryption is AES-256-GCM. The key is kept apart from the Excel file, so the file alone does not reveal the password. Team members need nothing extra: the key and the login file are both read from the R drive, so connecting to the VPN is enough. If the key file is lost, run steps 1–3 again.
 
 Never copy a login details file or the key into the project folder, OneDrive or email.
 

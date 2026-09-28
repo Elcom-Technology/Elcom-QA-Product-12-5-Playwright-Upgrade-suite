@@ -1,39 +1,34 @@
-// Creates the encryption key used for the passwords in the login details Excel file.
-// The key is never printed.
+// Creates the team's encryption key file on the R drive (network share, VPN only).
+// Where: "credentialskeyfile" in profiles/<PROFILE>.json, or ELCOM_CREDENTIALS_KEY_FILE in .env.
+// The key is never printed and is not stored on this machine.
+// Run once for the whole team: npm run create-key
 //
-//   npm run create-key            - Windows: saves the key in your Windows user environment
-//                                   as ELCOM_CREDENTIALS_KEY (restart VS Code afterwards).
-//   npm run create-key -- --file  - saves it to C:\Users\<you>\ElcomAutomation\credentials.key
-//                                   (or ELCOM_CREDENTIALS_KEY_FILE) instead.
-//
-// Never replaces an existing key: passwords encrypted with it would stop working.
+// If you already made a key earlier as the Windows variable ELCOM_CREDENTIALS_KEY, this moves that
+// key into the file, so the password already encrypted in the Excel keeps working.
+// Never replaces an existing key file: passwords encrypted with it would stop working.
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { execFileSync } = require('child_process');
-const { KEY_FILE } = require('../src/helpers');
+const { keyFile } = require('../src/helpers');
 
-const useFile = process.argv.includes('--file') || process.platform !== 'win32';
-
-if (process.env.ELCOM_CREDENTIALS_KEY) {
-  console.log('ELCOM_CREDENTIALS_KEY is already set - not changed.');
+const file = keyFile();
+if (fs.existsSync(file)) {
+  console.log(`Key file already exists, not changed: ${file}`);
   process.exit(0);
 }
-if (fs.existsSync(KEY_FILE)) {
-  console.log(`Key file already exists, not changed: ${KEY_FILE}`);
-  process.exit(0);
+if (!fs.existsSync(path.dirname(file))) {
+  console.error(`Folder not reachable: ${path.dirname(file)}\nConnect to the VPN and try again.`);
+  process.exit(1);
 }
-
-const key = crypto.randomBytes(32).toString('base64');
-if (useFile) {
-  fs.mkdirSync(path.dirname(KEY_FILE), { recursive: true });
-  fs.writeFileSync(KEY_FILE, key + '\n', { mode: 0o600 });
-  console.log(`Created key file: ${KEY_FILE}`);
+const oldKey = (process.env.ELCOM_CREDENTIALS_KEY || '').trim();
+const key = oldKey && Buffer.from(oldKey, 'base64').length === 32 ? oldKey : crypto.randomBytes(32).toString('base64');
+fs.writeFileSync(file, key + '\n');
+console.log(`Created key file: ${file}`);
+if (oldKey) {
+  console.log('It holds the key from your ELCOM_CREDENTIALS_KEY variable, so the encrypted password still works.');
+  console.log('You can now remove that variable (PowerShell):');
+  console.log('  [Environment]::SetEnvironmentVariable("ELCOM_CREDENTIALS_KEY", $null, "User")');
 } else {
-  // setx writes to HKCU\Environment (this Windows user only). Output is hidden so the key is not shown.
-  execFileSync('setx', ['ELCOM_CREDENTIALS_KEY', key], { stdio: 'ignore' });
-  console.log('Saved the key in your Windows user environment variable ELCOM_CREDENTIALS_KEY.');
-  console.log('Close and reopen VS Code (all terminals) so the tests can see it.');
+  console.log('Now run "npm run encrypt-password" and put the ENC:v1:... text in the password cell.');
 }
-console.log('Anyone running the tests on another machine needs the same key (share it securely).');

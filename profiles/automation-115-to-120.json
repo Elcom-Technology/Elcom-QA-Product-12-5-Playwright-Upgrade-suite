@@ -12,5 +12,6 @@
   "CurrentEventname": "Test",
   "CurrentFormNameWorkflow": "Test",
   "domainname": "https://automation-115-to-120.staging.elcomcms.com/",
-  "CurrentWorkflowName": "test"
+  "CurrentWorkflowName": "test",
+  "credentialskeyfile": "//192.168.2.25/Common/QA/Katalon-Data/credentials.key"
 }

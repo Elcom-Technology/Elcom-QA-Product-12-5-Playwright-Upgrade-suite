@@ -9,7 +9,8 @@
     "report": "playwright show-report",
     "create-login-file": "node scripts/create-login-details.js",
     "create-key": "node scripts/create-key.js",
-    "encrypt-password": "node scripts/encrypt-password.js"
+    "encrypt-password": "node scripts/encrypt-password.js",
+    "postinstall": "playwright install chromium"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",

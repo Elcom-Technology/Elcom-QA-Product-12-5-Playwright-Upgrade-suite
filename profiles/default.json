@@ -13,5 +13,6 @@
   "CurrentFormNameWorkflow": "Test",
   "domainname": "https://ec12-5.dev.elcomcms.com/",
   "CurrentWorkflowName": "test",
-  "credentialsfile": "//192.168.2.25/Common/QA/Katalon-Data/ec12-5-dev-profile - ADMIN.xlsx"
+  "credentialsfile": "//192.168.2.25/Common/QA/Katalon-Data/ec12-5-dev-profile - ADMIN.xlsx",
+  "credentialskeyfile": "//192.168.2.25/Common/QA/Katalon-Data/credentials.key"
 }
