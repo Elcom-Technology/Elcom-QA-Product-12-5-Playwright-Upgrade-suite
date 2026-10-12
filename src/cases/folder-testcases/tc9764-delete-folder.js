@@ -11,10 +11,13 @@ module.exports = async function run(web) {
   await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Naviagte to publishing Folders/Click Folders');
   await web.click('Folder_PageObjects/Add Folder/span_Elcom_Automation_Folder');
   await web.click('Folder_PageObjects/Add_Folder_Option');
-  let str = 'TestFolderThen' + nanoTime();
+  let str = 'TestFolderQA' + nanoTime();
   G.foldername = str;
   await web.setText('Folder_PageObjects/Folder_Name_Field', str);
   await web.click('Folder_PageObjects/Add Folder/Save_Button');
+  // The folder tree can take more than verifyTextPresent's 10s to show the new folder after a
+  // save on the dev server, so allow up to 30s.
+  await expect(web.page.getByText(G.foldername).first(), 'the new folder appears in the tree').toBeAttached({ timeout: 30 * 1000 });
   await web.verifyTextPresent(G.foldername, false);
   // Safety check (not in the Katalon script): Delete acts on the folder selected in the tree and
   // its confirm box is accepted automatically, so make sure the selected folder is the one just

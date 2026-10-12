@@ -404,7 +404,10 @@ class WebUI {
   async verifyTextPresent(text, isRegex = false, failureHandling) {
     return this._handle(failureHandling, async () => {
       const matches = (body) => (isRegex ? new RegExp(text).test(body) : body.includes(String(text)));
-      const end = Date.now() + 10 * SECOND;
+      // After a Save the page can still be blank while it reloads, so wait for the load to
+      // finish and keep checking for up to 30 s (it returns as soon as the text appears).
+      const end = Date.now() + 30 * SECOND;
+      await this.page.waitForLoadState('load', { timeout: 30 * SECOND }).catch(() => {});
       while (Date.now() < end) {
         if (matches(await this._pageText())) return true;
         await this.page.waitForTimeout(500);

@@ -2,7 +2,7 @@
 
 > Portions of this document and code were generated using an AI tool.
 
-This is the Katalon **UpgradeSuite** (`Test Suites/UpgradeSuite`, 42 test cases) converted to Playwright (JavaScript). Only the Upgrade Suite and the test cases it calls were converted; the other Katalon suites were left out.
+This is the Katalon **UpgradeSuite** (`Test Suites/UpgradeSuite`, 42 test cases) converted to Playwright (JavaScript). All of them, plus a login check, run as a suite of 43 tests (`suites/upgrade-suite.spec.js`), and each is also its own file in `tests/` (`01-` to `43-`, in the Katalon order). Only the Upgrade Suite and the test cases it calls were converted; the other Katalon suites were left out.
 
 ## Setup (once)
 
@@ -26,7 +26,7 @@ Some files are not in git on purpose (see `.gitignore`). Each person creates the
 | Login details Excel | Nothing to copy if the network share `\\192.168.2.25\Common\QA\Katalon-Data` is reachable. Otherwise ask the lead for the file and set `ELCOM_CREDENTIALS_FILE` in `.env`. |
 | `.state/`, `test-results/`, `playwright-report/` | Nothing – created automatically by each run. |
 
-Check it works: `npx playwright test tests/login.spec.js --headed`
+Check it works: `npx playwright test 01-login-site --headed`
 
 ## Login details
 
@@ -35,9 +35,15 @@ The username and password are read from an Excel file, as in Katalon. The file i
 **Which file is used** (first match wins):
 1. `ELCOM_CREDENTIALS_FILE=<full path to the .xlsx>` in `.env`.
 2. `"credentialsfile"` in the profile. `profiles/default.json` (ec12-5) points at the Katalon data file `\\192.168.2.25\Common\QA\Katalon-Data\ec12-5-dev-profile - ADMIN.xlsx`, so the network share must be reachable.
-3. `C:\Users\<you>\ElcomAutomation\LoginDetails.xlsx` on your machine. `npm run create-login-file` creates it with placeholder values (it never overwrites an existing file).
+3. `\\192.168.2.25\Common\QA\Katalon-Data\LoginDetails.xlsx` on the R drive (used by `automation-115-to-120`, which has no `credentialsfile`). `npm run create-login-file` creates it with placeholder values (it never overwrites an existing file).
 
-**Layouts understood** (first sheet):
+The login details file is always kept on the R drive, so the VPN must be connected to run tests.
+
+**Sheets used:**
+- **First sheet** (`logindetails` in the ec12-5 file) – the login used by every test.
+- **`Add new user with group`** – username and password of the user TC9757 creates. Elcom does not allow `# % < > *` in passwords. TC9757 stops with a message if this sheet is missing.
+
+**Layouts understood** (in each sheet):
 - **Katalon style** (the files on the share): labels in column A, values in column B.
 
   | A | B |
@@ -45,15 +51,14 @@ The username and password are read from an Excel file, as in Katalon. The file i
   | username | … |
   | password | … |
   | totpsecret | optional, only if the site asks for MFA |
-  | newuserpassword | optional – password for the user TC9757 creates; if missing, a random one that meets the site's password rules is made for each run |
 
-- **Table style** (the local file): a header row `Profile | Username | Password | TOTPSecret | NewUserPassword`, then one row per profile. The row whose `Profile` matches `PROFILE` is used (`default` when `PROFILE` is not set).
+- **Table style** (`LoginDetails.xlsx`): a header row `Profile | Username | Password | TOTPSecret`, then one row per profile. The row whose `Profile` matches `PROFILE` is used (`default` when `PROFILE` is not set).
 
-**The password must be encrypted.** The password cell holds `ENC:v1:…` text, not the password itself. The tests decrypt it just before logging in; a plain password stops the run with a message. (`totpsecret` and `newuserpassword` may be encrypted the same way; plain values are still accepted for those two.)
+**Passwords must be encrypted.** Every `password` cell holds `ENC:v1:…` text, not the password itself. The tests decrypt it just before use; a plain password stops the run with a message. (`totpsecret` may be encrypted the same way; a plain value is still accepted for it.)
 
 1. `npm run create-key` – once for the whole team. Creates the key file on the R drive (`credentialskeyfile` in the profile, default `\\192.168.2.25\Common\QA\Katalon-Data\credentials.key`; or `ELCOM_CREDENTIALS_KEY_FILE` in `.env`). The key is never printed and never stored on anyone's machine; the VPN must be connected to run tests.
 2. `npm run encrypt-password` – type the password twice (it is hidden). It prints the `ENC:v1:…` text.
-3. Paste that text into the password cell of the login details file and save.
+3. Paste that text into the `password` cell of the sheet and save. Repeat steps 2–3 for the other sheet.
 
 The encryption is AES-256-GCM. The key is kept apart from the Excel file, so the file alone does not reveal the password. Team members need nothing extra: the key and the login file are both read from the R drive, so connecting to the VPN is enough. If the key file is lost, run steps 1–3 again.
 
@@ -63,13 +68,24 @@ Note: a Playwright trace (`trace.zip`, kept for failed tests) records the values
 
 ## Running
 
+The 43 test cases can be run two ways, set up as two Playwright projects:
+- **suite** – `suites/upgrade-suite.spec.js`, all 43 tests in one file.
+- **testcases** – `tests/01-…` to `tests/43-…`, one file per test case.
+
+Run one project at a time. A plain `npx playwright test` runs both, so every test would run twice.
+
 | What | Command |
 |---|---|
-| Whole suite | `npx playwright test` |
-| Whole suite, watch the browser | `npx playwright test --headed` |
-| One test | `npx playwright test -g "TC9765"` |
-| Another profile | `PROFILE=automation-115-to-120 npx playwright test` (PowerShell: `$env:PROFILE="automation-115-to-120"; npx playwright test`) |
+| Whole suite | `npm run suite` (same as `npx playwright test --project=suite`) |
+| Whole suite, watch the browser | `npm run suite -- --headed` |
+| All 43 test case files, in order | `npm run testcases` |
+| One test case file | `npx playwright test 30-tc9765-add-folder --headed` |
+| One test inside the suite | `npx playwright test --project=suite -g "TC9765"` |
+| List the 43 tests | `npx playwright test --project=suite --list` |
+| Another profile | PowerShell: `$env:PROFILE="automation-115-to-120"; npm run suite` |
 | Open the report | `npx playwright show-report` |
+
+In VS Code (Playwright extension), tick only one project – **suite** or **testcases** – in the Playwright section of the Testing panel.
 
 Tests run one at a time, in the same order as the Katalon suite. Some tests use values saved by earlier ones (for example TC9745 deletes the article created before it, and TC9770/TC9772 use the workflow created by TC9769). When you run a single test, run the test it depends on first.
 
@@ -77,7 +93,8 @@ Tests run one at a time, in the same order as the Katalon suite. Some tests use 
 
 | Path | What it is | Katalon equivalent |
 |---|---|---|
-| `tests/upgrade-suite.spec.js` | The suite: the 42 tests in order | `Test Suites/UpgradeSuite` |
+| `suites/upgrade-suite.spec.js` | The suite: all 43 tests in one file, in order (login check + the 42 Katalon tests) | `Test Suites/UpgradeSuite` |
+| `tests/01-…spec.js` – `tests/43-…spec.js` | The same 43 tests, one file per test case, run in number order | `Test Cases/` |
 | `src/cases/` | One file per converted test case | `Scripts/` + `Test Cases/` |
 | `src/cases/index.js` | `callTestCase(web, name)` | `WebUI.callTestCase(findTestCase(name))` |
 | `src/objects.json` | Locators for the 503 test objects the suite uses | `Object Repository/` |
@@ -100,7 +117,7 @@ These were in the original scripts, not introduced by the conversion:
 
 1. **TC9761 – Recycle bin document manager:** uses the object `Common_RB,RS,PB_PageObjects/Ec12/Document Manger/Recycle Bin/Click Recyclebin Object/Enter name filed to search Object/Enter Namer to search`, which does not exist in the Object Repository. It now uses `Common_RB,RS,PB_PageObjects/Click Recyclebin Object/Enter name filed to search Object/Enter Namer to search`, which has the same locator (`//input[@id='txtFilterName']`).
 2. **TC9769 – Create_Form_with_Workflow:** `WebUI.wait(30)` is not a Katalon keyword. It is now `waitForAlert(30)`, because the next step accepts an alert. The same script also passed a text path to `waitForElementClickable` instead of `findTestObject(...)`; this now uses the object.
-3. **TC9757 – Add New User with group:** the new user's password was written in the script. It now comes from `newuserpassword` in the login details file, or, if that is empty, a random password made for the run (nobody logs in as that user).
+3. **TC9757 – Add New User with group:** the new user's password was written in the script. The new user's username and password now come from the `Add new user with group` sheet of the login details Excel file on the R drive (password encrypted).
 4. **Login:** the username, password and MFA secret came from an Excel file on a network share. They now come from a local Excel file (see **Login details**).
 5. **Object Repository:** 4 `.rs` files contain unresolved Git merge-conflict markers (`<<<<<<< HEAD`). None of them are used by the Upgrade Suite, but they may break other Katalon suites.
 6. **Uploads:** the Katalon scripts saved a timestamped copy of each upload file into `Include/Resources`, which is why that folder has dozens of copies. The copies now go to `test-results/uploads` instead.
@@ -114,45 +131,46 @@ The conversion was checked for syntax, that every test case loads, and that ever
 
 | # | Test | File |
 |---|---|---|
-| 1 | TC9736 - Deactivate Article | `src/cases/article-testcases/tc9736-deactivate-article.js` |
-| 2 | TC9737 - Add a Comment Article element | `src/cases/article-testcases/tc9737-add-a-comment-article-element.js` |
-| 3 | TC9738 - Add a Content Editor Article element | `src/cases/article-testcases/tc9738-add-a-content-editor-article-element.js` |
-| 4 | TC9739 - Add a Document List article element | `src/cases/article-testcases/tc9739-add-a-document-list-article-element.js` |
-| 5 | TC9740 - Add a Dynamic widget | `src/cases/article-testcases/tc9740-add-a-dynamic-widget.js` |
-| 6 | TC9741 - Add a People element | `src/cases/article-testcases/tc9741-add-a-people-element.js` |
-| 7 | TC9742 - Add a Search Article element | `src/cases/article-testcases/tc9742-add-a-search-article-element.js` |
-| 8 | TC9743 - Add the taxonomy Search element | `src/cases/article-testcases/tc9743-add-the-taxonomy-search-element.js` |
-| 9 | TC9744 - Create a Folder Explorer | `src/cases/article-testcases/tc9744-create-a-folder-explorer.js` |
-| 10 | TC9745 - Delete Article | `src/cases/article-testcases/tc9745-delete-article.js` |
-| 11 | TC9746 - Event Quick Search Element | `src/cases/article-testcases/tc9746-event-quick-search-element.js` |
-| 12 | TC9747 - Add a Form with Panel | `src/cases/form-test-cases/tc9747-add-a-form-with-panel.js` |
-| 13 | TC9748 - Add an image through regular upload | `src/cases/imagemanagerr-testcases/tc9748-add-an-image-through-regular-upload.js` |
-| 14 | TC9749 - Search for an image | `src/cases/imagemanagerr-testcases/tc9749-search-for-an-image.js` |
-| 15 | TC9758 - Restore an image to previous version | `src/cases/imagemanagerr-testcases/tc9758-restore-an-image-to-previous-version.js` |
-| 16 | TC9754 - Add a document through regular upload | `src/cases/documentmanager-testcases/tc9754-add-a-document-through-regular-upload.js` |
-| 17 | TC9753 - Search for a document | `src/cases/documentmanager-testcases/tc9753-search-for-a-document.js` |
-| 18 | TC9750 - Delete image not in use | `src/cases/imagemanagerr-testcases/tc9750-delete-image-not-in-use.js` |
-| 19 | TC9751 - Multiple Image Upload | `src/cases/imagemanagerr-testcases/tc9751-multiple-image-upload.js` |
-| 20 | TC9759 - Restore a document to previous version | `src/cases/documentmanager-testcases/tc9759-restore-a-document-to-previous-version.js` |
-| 21 | TC9752 - Delete a document not in use | `src/cases/documentmanager-testcases/tc9752-delete-a-document-not-in-use.js` |
-| 22 | TC9755 - Multiple document Upload | `src/cases/documentmanager-testcases/tc9755-multiple-document-upload.js` |
-| 23 | TC9756 - Edit article | `src/cases/article-testcases/tc9756-edit-article.js` |
-| 24 | TC9760 - Recycle bin image manager | `src/cases/recyclebin-testcase/tc9760-recycle-bin-image-manager.js` |
-| 25 | TC9761 - Recycle bin document manager | `src/cases/recyclebin-testcase/tc9761-recycle-bin-document-manager.js` |
-| 26 | TC9762 - Recycle bin Folder | `src/cases/recyclebin-testcase/tc9762-recycle-bin-folder.js` |
-| 27 | TC9763 - Recycle bin Article | `src/cases/recyclebin-testcase/tc9763-recycle-bin-article.js` |
-| 28 | TC9757 - Add New User with group | `src/cases/security-testcases/tc9757-add-new-user-with-group.js` |
-| 29 | TC9765 - Add Folder | `src/cases/folder-testcases/tc9765-add-folder.js` |
-| 30 | TC9766 - Add_Folder_Via_QuickLink | `src/cases/globalsitesettings-testcases/tc9766-add-folder-via-quicklink.js` |
-| 31 | TC9767 - Edit Folder And Publish | `src/cases/folder-testcases/tc9767-edit-folder-and-publish.js` |
-| 32 | TC9768 - Add Acknowledgement | `src/cases/latest-testcases/tc9768-add-acknowledgement.js` |
-| 33 | TC9769 - Create_Form_with_Workflow | `src/cases/latest-testcases/tc9769-create-form-with-workflow.js` |
-| 34 | TC9770 - Approve_Form_Workflow | `src/cases/latest-testcases/tc9770-approve-form-workflow.js` |
-| 35 | TC9777 - Create Event | `src/cases/latest-testcases/tc9777-create-event.js` |
-| 36 | TC9771 - FormWithCalculator | `src/cases/latest-testcases/tc9771-formwithcalculator.js` |
-| 37 | TC9772 - Reject_Form_Workflow | `src/cases/latest-testcases/tc9772-reject-form-workflow.js` |
-| 38 | TC9773 - Form_With_Form_Results | `src/cases/latest-testcases/tc9773-form-with-form-results.js` |
-| 39 | TC9774 - Forgot password link and verify | `src/cases/latest-testcases/tc9774-forgot-password-link-and-verify.js` |
-| 40 | TC9775 - Enable_QuickAdd_Folder_InGSS | `src/cases/globalsitesettings-testcases/tc9775-enable-quickadd-folder-ingss.js` |
-| 41 | TC9764 - Delete Folder | `src/cases/folder-testcases/tc9764-delete-folder.js` |
-| 42 | TC9778 - Report generated for the specified date filter | `src/cases/reports-testcases/general/tc9778-report-generated-for-the-specified-date-filter.js` |
+| 1 | Login - site (login and MFA check) | `src/cases/common-testcases/login-site.js` |
+| 2 | TC9736 - Deactivate Article | `src/cases/article-testcases/tc9736-deactivate-article.js` |
+| 3 | TC9737 - Add a Comment Article element | `src/cases/article-testcases/tc9737-add-a-comment-article-element.js` |
+| 4 | TC9738 - Add a Content Editor Article element | `src/cases/article-testcases/tc9738-add-a-content-editor-article-element.js` |
+| 5 | TC9739 - Add a Document List article element | `src/cases/article-testcases/tc9739-add-a-document-list-article-element.js` |
+| 6 | TC9740 - Add a Dynamic widget | `src/cases/article-testcases/tc9740-add-a-dynamic-widget.js` |
+| 7 | TC9741 - Add a People element | `src/cases/article-testcases/tc9741-add-a-people-element.js` |
+| 8 | TC9742 - Add a Search Article element | `src/cases/article-testcases/tc9742-add-a-search-article-element.js` |
+| 9 | TC9743 - Add the taxonomy Search element | `src/cases/article-testcases/tc9743-add-the-taxonomy-search-element.js` |
+| 10 | TC9744 - Create a Folder Explorer | `src/cases/article-testcases/tc9744-create-a-folder-explorer.js` |
+| 11 | TC9745 - Delete Article | `src/cases/article-testcases/tc9745-delete-article.js` |
+| 12 | TC9746 - Event Quick Search Element | `src/cases/article-testcases/tc9746-event-quick-search-element.js` |
+| 13 | TC9747 - Add a Form with Panel | `src/cases/form-test-cases/tc9747-add-a-form-with-panel.js` |
+| 14 | TC9748 - Add an image through regular upload | `src/cases/imagemanagerr-testcases/tc9748-add-an-image-through-regular-upload.js` |
+| 15 | TC9749 - Search for an image | `src/cases/imagemanagerr-testcases/tc9749-search-for-an-image.js` |
+| 16 | TC9758 - Restore an image to previous version | `src/cases/imagemanagerr-testcases/tc9758-restore-an-image-to-previous-version.js` |
+| 17 | TC9754 - Add a document through regular upload | `src/cases/documentmanager-testcases/tc9754-add-a-document-through-regular-upload.js` |
+| 18 | TC9753 - Search for a document | `src/cases/documentmanager-testcases/tc9753-search-for-a-document.js` |
+| 19 | TC9750 - Delete image not in use | `src/cases/imagemanagerr-testcases/tc9750-delete-image-not-in-use.js` |
+| 20 | TC9751 - Multiple Image Upload | `src/cases/imagemanagerr-testcases/tc9751-multiple-image-upload.js` |
+| 21 | TC9759 - Restore a document to previous version | `src/cases/documentmanager-testcases/tc9759-restore-a-document-to-previous-version.js` |
+| 22 | TC9752 - Delete a document not in use | `src/cases/documentmanager-testcases/tc9752-delete-a-document-not-in-use.js` |
+| 23 | TC9755 - Multiple document Upload | `src/cases/documentmanager-testcases/tc9755-multiple-document-upload.js` |
+| 24 | TC9756 - Edit article | `src/cases/article-testcases/tc9756-edit-article.js` |
+| 25 | TC9760 - Recycle bin image manager | `src/cases/recyclebin-testcase/tc9760-recycle-bin-image-manager.js` |
+| 26 | TC9761 - Recycle bin document manager | `src/cases/recyclebin-testcase/tc9761-recycle-bin-document-manager.js` |
+| 27 | TC9762 - Recycle bin Folder | `src/cases/recyclebin-testcase/tc9762-recycle-bin-folder.js` |
+| 28 | TC9763 - Recycle bin Article | `src/cases/recyclebin-testcase/tc9763-recycle-bin-article.js` |
+| 29 | TC9757 - Add New User with group | `src/cases/security-testcases/tc9757-add-new-user-with-group.js` |
+| 30 | TC9765 - Add Folder | `src/cases/folder-testcases/tc9765-add-folder.js` |
+| 31 | TC9766 - Add_Folder_Via_QuickLink | `src/cases/globalsitesettings-testcases/tc9766-add-folder-via-quicklink.js` |
+| 32 | TC9767 - Edit Folder And Publish | `src/cases/folder-testcases/tc9767-edit-folder-and-publish.js` |
+| 33 | TC9768 - Add Acknowledgement | `src/cases/latest-testcases/tc9768-add-acknowledgement.js` |
+| 34 | TC9769 - Create_Form_with_Workflow | `src/cases/latest-testcases/tc9769-create-form-with-workflow.js` |
+| 35 | TC9770 - Approve_Form_Workflow | `src/cases/latest-testcases/tc9770-approve-form-workflow.js` |
+| 36 | TC9777 - Create Event | `src/cases/latest-testcases/tc9777-create-event.js` |
+| 37 | TC9771 - FormWithCalculator | `src/cases/latest-testcases/tc9771-formwithcalculator.js` |
+| 38 | TC9772 - Reject_Form_Workflow | `src/cases/latest-testcases/tc9772-reject-form-workflow.js` |
+| 39 | TC9773 - Form_With_Form_Results | `src/cases/latest-testcases/tc9773-form-with-form-results.js` |
+| 40 | TC9774 - Forgot password link and verify | `src/cases/latest-testcases/tc9774-forgot-password-link-and-verify.js` |
+| 41 | TC9775 - Enable_QuickAdd_Folder_InGSS | `src/cases/globalsitesettings-testcases/tc9775-enable-quickadd-folder-ingss.js` |
+| 42 | TC9764 - Delete Folder | `src/cases/folder-testcases/tc9764-delete-folder.js` |
+| 43 | TC9778 - Report generated for the specified date filter | `src/cases/reports-testcases/general/tc9778-report-generated-for-the-specified-date-filter.js` |

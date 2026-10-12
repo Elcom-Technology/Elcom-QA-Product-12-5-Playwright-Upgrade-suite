@@ -3619,5 +3619,11 @@
   },
   "Assertion_PageObjects/Form Calculator Result": {
     "selector": "role=textbox[name=\"Result\"]"
+  },
+  "GlobalSiteSettings_Objects/Page_Global Site Settings  Deployment Site/input_Show Add Folder": {
+    "selector": "xpath=//input[@id='chkShowQuickAddFolder']",
+    "fallbacks": [
+      "css=#chkShowQuickAddFolder"
+    ]
   }
 }

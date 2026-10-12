@@ -57,22 +57,26 @@ const G = new Proxy({}, {
 //   1. ELCOM_CREDENTIALS_FILE in .env, if set
 //   2. "credentialsfile" in the profile (profiles/<PROFILE>.json) - e.g. the Katalon data
 //      file \\192.168.2.25\Common\QA\Katalon-Data\ec12-5-dev-profile - ADMIN.xlsx
-//   3. C:\Users\<you>\ElcomAutomation\LoginDetails.xlsx (made by npm run create-login-file)
-// Two layouts are understood (first sheet):
+//   3. \\192.168.2.25\Common\QA\Katalon-Data\LoginDetails.xlsx (made by npm run create-login-file)
+// The file is kept on the R drive (network share, VPN only), never on this machine.
+// Sheets used:
+//   - the first sheet: the login used by every test
+//   - the "Add new user with group" sheet: username and password for the user TC9757 creates
+// Two layouts are understood (in each sheet):
 //   - Katalon style: labels in column A, values in column B
 //       username | <value>
 //       password | <value>
-//       (optional rows: totpsecret, newuserpassword)
+//       (optional row: totpsecret)
 //   - Table style: header row, then one row per profile
-//       Profile | Username | Password | TOTPSecret | NewUserPassword
+//       Profile | Username | Password | TOTPSecret
 //     The row whose Profile matches PROFILE (default "default") is used.
-const LOCAL_CREDENTIALS_FILE = path.join(require('os').homedir(), 'ElcomAutomation', 'LoginDetails.xlsx');
-const CREDENTIAL_COLUMNS = ['Profile', 'Username', 'Password', 'TOTPSecret', 'NewUserPassword'];
+const DEFAULT_CREDENTIALS_FILE = '//192.168.2.25/Common/QA/Katalon-Data/LoginDetails.xlsx';
+const NEW_USER_SHEET = 'Add new user with group';
+const CREDENTIAL_COLUMNS = ['Profile', 'Username', 'Password', 'TOTPSecret'];
 const CREDENTIAL_LABELS = {
   username: ['username', 'user name', 'user'],
   password: ['password'],
   totpSecret: ['totpsecret', 'totp secret', 'totp', 'mfa secret', 'secret'],
-  newUserPassword: ['newuserpassword', 'new user password'],
 };
 
 // ---------------------------------------------------------------------------
@@ -132,29 +136,35 @@ function decryptSecret(value) {
 /** The login details file for the current profile (see the list above). */
 function credentialsFile() {
   if (process.env.ELCOM_CREDENTIALS_FILE) return process.env.ELCOM_CREDENTIALS_FILE;
-  return loadProfile().credentialsfile || LOCAL_CREDENTIALS_FILE;
+  return loadProfile().credentialsfile || DEFAULT_CREDENTIALS_FILE;
 }
 
 let loadedCredentials = null;
+let loadedNewUser = null;
 
-/** Reads the login details for the current profile from the Excel file (once per run). */
-async function loadCredentials() {
-  if (loadedCredentials) return loadedCredentials;
+/**
+ * Reads username / password / totpsecret from one sheet of the login details file
+ * (the first sheet when sheetName is not given). The password must be encrypted.
+ */
+async function readDetails(sheetName) {
   const file = credentialsFile();
   if (!fs.existsSync(file)) {
     throw new Error(`Login details file not found: ${file}\n`
-      + '  Check the path (and that the network share is reachable), or see README "Login details".');
+      + '  Connect to the VPN so the R drive is reachable, check the path, or see README "Login details".');
   }
   const ExcelJS = require('exceljs');
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(file);
-  const sheet = workbook.worksheets[0];
   const text = (v) => String((v && typeof v === 'object' && 'text' in v) ? v.text : (v ?? '')).trim();
   const cell = (row, i) => text(row.getCell(i).value);
   const norm = (v) => v.toLowerCase().replace(/[\s_:-]+/g, ' ').trim();
   const keyFor = (label) => Object.keys(CREDENTIAL_LABELS).find((k) => CREDENTIAL_LABELS[k].includes(norm(label)));
+  const sheet = sheetName
+    ? workbook.worksheets.find((s) => norm(s.name) === norm(sheetName))
+    : workbook.worksheets[0];
+  if (!sheet) throw new Error(`No sheet named "${sheetName}" in ${file}`);
   const profile = process.env.PROFILE || 'default';
-  const found = { username: '', password: '', totpSecret: '', newUserPassword: '' };
+  const found = { username: '', password: '', totpSecret: '' };
 
   const header = {};
   let profileCol = 0;
@@ -173,7 +183,7 @@ async function loadCredentials() {
       const rowProfile = profileCol ? cell(row, profileCol) : 'default';
       if (norm(rowProfile) === norm(profile)) { match = row; break; }
     }
-    if (!match) throw new Error(`No row for profile "${profile}" in ${file}`);
+    if (!match) throw new Error(`No row for profile "${profile}" in ${file} (sheet "${sheet.name}")`);
     for (const k of Object.keys(header)) found[k] = cell(match, header[k]);
   } else {
     // Katalon style: label in column A, value in column B
@@ -186,16 +196,27 @@ async function loadCredentials() {
   for (const k of ['username', 'password']) {
     if (!found[k]) throw new Error(`No ${k} found in ${file} (sheet "${sheet.name}")`);
   }
-  // The password must be stored encrypted; the other secrets may be.
+  // The password must be stored encrypted; the TOTP secret may be.
   if (!isEncrypted(found.password)) {
-    throw new Error(`The password in ${file} is not encrypted.\n`
+    throw new Error(`The password in ${file} (sheet "${sheet.name}") is not encrypted.\n`
       + '  Run "npm run encrypt-password", then put the ENC:v1:... text it prints in the password cell.');
   }
-  for (const k of ['password', 'totpSecret', 'newUserPassword']) {
+  for (const k of ['password', 'totpSecret']) {
     if (isEncrypted(found[k])) found[k] = decryptSecret(found[k]);
   }
-  loadedCredentials = { ...found, file };
+  return { ...found, file, sheet: sheet.name };
+}
+
+/** Reads the login details for the current profile from the first sheet (once per run). */
+async function loadCredentials() {
+  if (!loadedCredentials) loadedCredentials = await readDetails();
   return loadedCredentials;
+}
+
+/** Username and password for the user TC9757 creates, from the "Add new user with group" sheet. */
+async function loadNewUserDetails() {
+  if (!loadedNewUser) loadedNewUser = await readDetails(NEW_USER_SHEET);
+  return loadedNewUser;
 }
 
 function requireLoaded(name) {
@@ -206,19 +227,6 @@ const credentials = {
   get username() { return requireLoaded('username'); },
   get password() { return requireLoaded('password'); },
   get totpSecret() { return requireLoaded('totpSecret'); },
-  // Password for the throwaway user TC9757 creates. Taken from the login details file when it
-  // has a newuserpassword; otherwise a strong random one is made once per run (nobody needs
-  // to log in as that user, so it does not have to be stored anywhere).
-  get newUserPassword() {
-    if (!requireLoaded('newUserPassword')) {
-      const pick = (set, n) => Array.from(crypto.randomBytes(n), (b) => set[b % set.length]).join('');
-      const chars = pick('ABCDEFGHJKLMNPQRSTUVWXYZ', 3) + pick('abcdefghijkmnopqrstuvwxyz', 5)
-        // Elcom's password rules do not allow # % < > *; these four are allowed.
-        + pick('23456789', 3) + pick('!@$&', 2);
-      loadedCredentials.newUserPassword = chars.split('').sort(() => crypto.randomInt(3) - 1).join('');
-    }
-    return loadedCredentials.newUserPassword;
-  },
 };
 
 // ---------------------------------------------------------------------------
@@ -302,7 +310,7 @@ function totpNow(base32Secret) {
 }
 
 module.exports = {
-  PROJECT_DIR, UPLOAD_DIR, G, credentials, loadCredentials, credentialsFile, LOCAL_CREDENTIALS_FILE, CREDENTIAL_COLUMNS,
+  PROJECT_DIR, UPLOAD_DIR, G, credentials, loadCredentials, loadNewUserDetails, credentialsFile, DEFAULT_CREDENTIALS_FILE, NEW_USER_SHEET, CREDENTIAL_COLUMNS,
   keyFile, encryptSecret, decryptSecret, isEncrypted, resetGlobals, loadProfile,
   nanoTime, containsIgnoreCase, formatDate, resource, createTimeStampedFile, copyFile, totpNow,
 };

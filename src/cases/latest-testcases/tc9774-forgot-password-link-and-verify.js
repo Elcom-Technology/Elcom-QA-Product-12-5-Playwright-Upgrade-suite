@@ -10,6 +10,8 @@ module.exports = async function run(web) {
   await web.click('Latest test objects/Page_Login  Deployment Site/a_Forgot password');
   await web.setText('Latest test objects/Page_Forgotten Password  Deployment Site/input_Email Address_ctl00ContentPlaceHolder_e4618b', 'helpdesk@elcom.com.au');
   await web.click('Latest test objects/Page_Forgotten Password  Deployment Site/input_User Name_ctl00ContentPlaceHolderMain_d3e310');
+  // Not in the original Katalon script: the site must confirm the reset request.
+  await web.verifyTextPresent('You will receive an email with instructions on how to choose a new password', false);
   await web.click('Latest test objects/Page_Forgotten Password  Deployment Site/div_Back to site                           _e25191');
   let latesturl = await web.getUrl();
   console.log(('Print>>>>>>>>>>>>>' + latesturl) + '>>>>>>>>>>>>>');

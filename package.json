@@ -4,8 +4,10 @@
   "description": "Elcom 12.5 Upgrade Suite converted from Katalon to Playwright",
   "private": true,
   "scripts": {
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
+    "test": "playwright test --project=suite",
+    "test:headed": "playwright test --project=suite --headed",
+    "suite": "playwright test --project=suite",
+    "testcases": "playwright test --project=testcases",
     "report": "playwright show-report",
     "create-login-file": "node scripts/create-login-details.js",
     "create-key": "node scripts/create-key.js",
