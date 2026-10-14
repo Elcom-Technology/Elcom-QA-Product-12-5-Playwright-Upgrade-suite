@@ -2990,8 +2990,9 @@
     ]
   },
   "Latest test objects/Page_Form with Calculator2477242731870400  _0b398d/input_Enter Second Number_UserField1109_24035": {
-    "selector": "xpath=(//*[@class='col-form-label'])[2]/following-sibling::input[not(@type='hidden')]",
+    "selector": "xpath=//input[@id=substring-before(substring-after(//input[starts-with(@id,'hidCalcFields')]/@value, ','), '|')]",
     "fallbacks": [
+      "xpath=(//*[@class='col-form-label'])[2]/following-sibling::input[not(@type='hidden')]",
       "css=#UserField1109_24035",
       "xpath=//input[@id='UserField1109_24035']",
       "xpath=//div[@id='FormCreator_1109']/div[3]/input",
@@ -2999,8 +3000,9 @@
     ]
   },
   "Latest test objects/Page_Form with Calculator2477242731870400  _0b398d/input_Single Line Text_UserField1109_24034": {
-    "selector": "xpath=(//*[@class='col-form-label'])[1]/following-sibling::input[not(@type='hidden')]",
+    "selector": "xpath=//input[@id=substring-before(//input[starts-with(@id,'hidCalcFields')]/@value, ',')]",
     "fallbacks": [
+      "xpath=(//*[@class='col-form-label'])[1]/following-sibling::input[not(@type='hidden')]",
       "css=#UserField1109_24034",
       "xpath=//input[@id='UserField1109_24034']",
       "xpath=//div[@id='FormCreator_1109']/div[2]/input",
