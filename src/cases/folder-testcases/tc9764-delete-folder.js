@@ -6,9 +6,8 @@ const { G, nanoTime } = require('../../helpers');
 module.exports = async function run(web) {
   const { callTestCase } = require('../index');
   await callTestCase(web, 'Common_TestCases/Login - site');
-  await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Backend admin page/burger menu click');
-  await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Navigate to Publishing/Click Publishing');
-  await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Naviagte to publishing Folders/Click Folders');
+  // Burger menu -> Publishing -> Folders (or straight to the folders page, see openFoldersPage)
+  await web.openFoldersPage();
   await web.click('Folder_PageObjects/Add Folder/span_Elcom_Automation_Folder');
   await web.click('Folder_PageObjects/Add_Folder_Option');
   let str = 'TestFolderQA' + nanoTime();

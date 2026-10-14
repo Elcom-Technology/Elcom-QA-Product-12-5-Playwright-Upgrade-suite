@@ -26,7 +26,7 @@ module.exports = async function run(web) {
     await web.page.waitForLoadState('networkidle').catch(() => {});
     // Create Form updates the page in place (no new page load); the designer then reloads its
     // data. Wait for that (GetExistingFields) so Form Items clicks are not lost.
-    const designerReady = web.page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 60 * 1000 });
+    const designerReady = web.waitForFormDesigner();
     await web.click('Form_Page_Objects/Forms Object/Form with Panel/CreateForm', 'OPTIONAL');
     await designerReady;
     await web.delay(1);
@@ -51,7 +51,7 @@ module.exports = async function run(web) {
   // load, so waiting for "networkidle" does not help). Clicking Publish before that reload has
   // finished makes the site save the fields a second time - every field ends up twice on the
   // published form. Wait for the reload (GetExistingFields) before publishing.
-  const reloaded = web.page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 60 * 1000 });
+  const reloaded = web.waitForFormDesigner();
   await web.click('Form_Page_Objects/Forms Object/Form FIeld Submission/Page_Edit Module - Elcom_Automation_Folder _1a3284/input_ctl07ctl07easyCommit');
   await reloaded;
   await web.delay(2);
@@ -77,22 +77,27 @@ module.exports = async function run(web) {
   await web.selectOptionByLabel('Latest test objects/Workflow maintain/Click Form list', G.CurrentFormNameWorkflow, false);
   await web.delay(3);
   await web.click('Workflow_PageObjects/Page_Maintain Workflows - Settings - Other _dfa11d/a_Who Will Manage This Workflow');
-  await web.setText('Workflow_PageObjects/Page_Maintain Workflows - Settings - Other _dfa11d/input_Choose Groups_ctl00ContentPlaceHolder_316abe', 'Administrators');
-  // Wait for the matching search result, then click it (the Katalon steps clicked the first
-  // list item straight away, which is not always the group that was typed).
-  await web.waitForElementVisible('Workflow_PageObjects/Managing groups dropdown/li_Administrators', 30);
-  await web.click('Workflow_PageObjects/Managing groups dropdown/li_Administrators');
+  // Managing groups: Administrators and System. Sites without them (e.g. Mecca) use an Admin
+  // group instead; the System group is skipped when the site has none. Each pick waits for the
+  // matching search result before clicking it (the Katalon steps clicked the first list item
+  // straight away, which is not always the group that was typed).
+  const groupInput = 'Workflow_PageObjects/Page_Maintain Workflows - Settings - Other _dfa11d/input_Choose Groups_ctl00ContentPlaceHolder_316abe';
+  const groupList = 'div[id*="ManagingGroups_selGroupSelector"]';
+  const managers = await web.pickFromDropdown(groupInput, groupList, ['Administrators', 'Admin'], 30);
+  expect(managers, 'an Administrators or Admin group exists on this site to manage the workflow').not.toBe('');
   await web.click('Workflow_PageObjects/Click Add button Object/Click Administrator');
   await web.delay(3);
-  await web.setText('Workflow_PageObjects/Page_Maintain Workflows - Settings - Other _dfa11d/input_Choose Groups_ctl00ContentPlaceHolder_316abe', 'System');
-  await web.waitForElementVisible('Workflow_PageObjects/Managing groups dropdown/li_System', 30);
-  await web.click('Workflow_PageObjects/Managing groups dropdown/li_System');
-  await web.click('Workflow_PageObjects/Click Add button Object/Click Administrator');
-  await web.setText('Workflow_PageObjects/Page_Maintain Workflows - Settings - Other _dfa11d/input_Choose user - type text, then enter f_8480c8','web master');
-  await web.waitForElementVisible('Workflow_PageObjects/Page_Maintain Workflows - Settings - Other _dfa11d/input_Choose user - type text, then enter f_8480c8', 3);
-  await web.setText('Workflow_PageObjects/Workflow Manager Name/Workflow Manager', 'Web Master');
-  await web.waitForElementVisible('Workflow_PageObjects/Select Webmaster/li_Web Master', 30);
-  await web.click('Workflow_PageObjects/Select Webmaster/li_Web Master');
+  if (await web.pickFromDropdown(groupInput, groupList, ['System'], 30)) {
+    await web.click('Workflow_PageObjects/Click Add button Object/Click Administrator');
+  }
+  // Workflow manager: the logged-in user, so the approval lands in their Workflow Inbox
+  // (TC9770 / TC9772). That is "Web Master" on ec12-5 but differs per site (e.g. "Helpdesk
+  // Elcom" on Mecca), so read it from the admin header; "Web Master" is the fallback.
+  const me = await web.loggedInUserName();
+  console.log('Logged-in user: ' + (me || '(not shown)'));
+  const manager = await web.pickFromDropdown('Workflow_PageObjects/Workflow Manager Name/Workflow Manager',
+    'div[id*="WorkflowManager_cboUsers_DropDown"]', [me, 'Web Master'].filter(Boolean), 30);
+  expect(manager, 'the logged-in user (or Web Master) can be chosen as the workflow manager').not.toBe('');
   await web.scrollToElement('Workflow_PageObjects/Workflow_Save Btn/a_Save', 2);
   await web.click('Workflow_PageObjects/Click Workflow object/a_Workflow Baskets');
   await web.click('Workflow_PageObjects/Page_Maintain Workflows - Settings - Other _dfa11d/input_Workflow Baskets_Name not found');
@@ -107,7 +112,12 @@ module.exports = async function run(web) {
     await web.delay(1);
     return (await web.find(basketName)).inputValue();
   }, { timeout: 30 * 1000 }).toBe('Manager');
-  await web.selectOptionByLabel('Workflow_PageObjects/Workflow basket/Select Basket owner', 'Web Master', false);
+  // Basket owner: the same user as the workflow manager.
+  const ownerSelect = await web.find('Workflow_PageObjects/Workflow basket/Select Basket owner');
+  const owners = (await ownerSelect.locator('option').allInnerTexts()).map((o) => o.trim());
+  const owner = [me, 'Web Master'].filter(Boolean).map((n) => owners.find((o) => o.toLowerCase().includes(n.toLowerCase()))).find(Boolean);
+  expect(owner, 'the logged-in user (or Web Master) is in the basket owner list').toBeTruthy();
+  await web.selectOptionByLabel('Workflow_PageObjects/Workflow basket/Select Basket owner', owner, false);
   await web.setText('Workflow_PageObjects/Page_Maintain Workflows - Settings - Other _dfa11d/input__ctl00ContentPlaceHolderMainNoAjaxtxt_435212', '5');
   await web.executeJavaScript('window.scrollTo(0, 1200);', null);
   await web.click('Workflow_PageObjects/Workflow_Save Btn/a_Save');

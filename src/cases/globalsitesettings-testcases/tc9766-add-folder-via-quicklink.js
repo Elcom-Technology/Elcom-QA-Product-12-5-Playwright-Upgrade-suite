@@ -17,8 +17,15 @@ module.exports = async function run(web) {
   await web.click('GlobalSiteSettings_Objects/Page_Edit an article  Deployment Site/input_Parent Folder_ctl00ctl00ctl14addFolde_32979c');
   await web.click('GlobalSiteSettings_Objects/Page_Edit an article  Deployment Site/li_Elcom_Automation_FolderElcom_Automation_Folder');
   await web.click('GlobalSiteSettings_Objects/Page_Edit an article  Deployment Site/input_blank_ctl00ctl00ctl14addFolderModalDi_69f22c');
-  // After saving, the site opens the new (empty) folder. Its name is in the page title, not in
-  // the page text, so check the title (verifyTextPresent only looks at the page text).
-  await expect.poll(() => web.getWindowTitle().catch(() => ''), { timeout: 30 * 1000 }).toContain(foldername);
+  // After saving, the site opens the new (empty) folder. Its name is in the page title on most
+  // sites (e.g. ec12-5), but some sites set their own title (e.g. Mecca), so also accept the
+  // folder's address or a page heading with the folder name.
+  const heading = web.page.getByRole('heading', { name: foldername });
+  await expect.poll(async () => {
+    const title = await web.page.title().catch(() => '');
+    return title.includes(foldername)
+      || web.page.url().toLowerCase().includes(foldername.toLowerCase())
+      || heading.first().isVisible().catch(() => false);
+  }, { message: 'the new folder opens', timeout: 30 * 1000 }).toBe(true);
   console.log('Print <<<<<<<<<<<<<<<<<<' + await web.getWindowTitle() + '>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
 };

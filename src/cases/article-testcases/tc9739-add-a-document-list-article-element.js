@@ -26,5 +26,7 @@ module.exports = async function run(web) {
   await web.click('Articles Elements_Page_Objects/Add a Document List element/Click the Publish Button to create a Document list/Click on PUblish button for the Document List article element');
   let Verify = await web.getText('Assertion_PageObjects/VerifyDocList');
   console.log('Print <<<<<<<<<<<<<<<<<<' + Verify + '>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-  expect(containsIgnoreCase(Verify, "Type File")).toBeTruthy();
+  // Sites lay the list out differently (e.g. Mecca puts "Type" and "File" on separate lines),
+  // so compare with the whitespace collapsed.
+  expect(containsIgnoreCase(String(Verify).replace(/\s+/g, ' '), "Type File")).toBeTruthy();
 };

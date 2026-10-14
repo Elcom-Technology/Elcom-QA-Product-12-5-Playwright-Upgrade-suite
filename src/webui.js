@@ -168,12 +168,137 @@ class WebUI {
     this.frame = null;
   }
 
+  /**
+   * Burger menu -> Publishing -> Folders, as in the Katalon scripts.
+   * Some sites (profile "folderspagefallback": true) have no burger menu; there, when it is
+   * not on the page, go straight to <domainname>folders.aspx instead.
+   */
+  async openFoldersPage() {
+    const burger = 'Common Article_Forms_Page_Objects/Publishing Folder/Backend admin page/burger menu click';
+    const { G } = require('./helpers');
+    if (G.folderspagefallback) {
+      const o = this._object(burger);
+      const found = await this._root(o).locator(o.selector).first()
+        .waitFor({ state: 'visible', timeout: 5 * SECOND }).then(() => true, () => false);
+      if (!found) {
+        const url = new URL('folders.aspx', G.domainname).href;
+        console.log(`[folders page] burger menu not on this site - going to ${url}`);
+        await this.navigateToUrl(url);
+        return;
+      }
+    }
+    await this.click(burger);
+    await this.click('Common Article_Forms_Page_Objects/Publishing Folder/Navigate to Publishing/Click Publishing');
+    await this.click('Common Article_Forms_Page_Objects/Publishing Folder/Naviagte to publishing Folders/Click Folders');
+  }
+
+  /**
+   * Starts waiting for the form designer to (re)load its fields: call it before the click that
+   * triggers the reload, and await the result after the click. Most sites (e.g. ec12-5) send a
+   * GetExistingFields request; when none comes within 20s (e.g. Mecca), wait for the page to
+   * settle with the Form Items toolbar showing instead.
+   */
+  waitForFormDesigner() {
+    const page = this.page;
+    return page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 20 * SECOND })
+      .catch(async () => {
+        console.warn('[form designer] no GetExistingFields response within 20s - waiting for the page to settle instead');
+        await page.waitForLoadState('networkidle', { timeout: 30 * SECOND }).catch(() => {});
+        await page.getByText('New Panel', { exact: true }).first().waitFor({ state: 'visible', timeout: 30 * SECOND });
+      });
+  }
+
+  /**
+   * Picks an item (a group, a user) in a type-ahead picker: type text, then choose from its
+   * drop-down. Sites name their groups and users differently (e.g. Mecca has no System or
+   * Administrators group and no Web Master user), so pass the preferred search text first and
+   * fallbacks after it: each is typed in turn until the drop-down (inside listScope) shows a
+   * matching item, which is then clicked.
+   * Returns the chosen item's text, or '' when nothing matched any of the searches.
+   */
+  async pickFromDropdown(inputKey, listScope, searches, waitSeconds = 10) {
+    for (const search of searches) {
+      await this.setText(inputKey, search);
+      const pattern = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const option = this.page.locator(`${listScope} li`).filter({ hasText: pattern, visible: true }).first();
+      if (await option.waitFor({ state: 'visible', timeout: waitSeconds * SECOND }).then(() => true, () => false)) {
+        const name = (await option.innerText()).trim();
+        await option.click();
+        await this._afterAction();
+        console.log(`[picker] typed "${search}", chose "${name}"`);
+        return name;
+      }
+      console.warn(`[picker] nothing matching "${search}" on this site`);
+    }
+    return '';
+  }
+
+  /**
+   * Starts watching the background uploads (Telerik "rau" requests) that picking files in a
+   * Document / Image Manager upload box sends. Call it before picking the files; then call
+   * wait() before clicking the page's Upload button. Clicking Upload while an upload is still
+   * running aborts it and saves nothing, which happens on slower sites (e.g. Mecca). wait()
+   * never fails the test: it returns once no upload is running, or after timeoutSeconds.
+   */
+  trackUploads() {
+    const page = this.page;
+    const pending = new Set();
+    const isUpload = (r) => /WebResource.axd?type=rau/i.test(r.url());
+    const start = (r) => { if (isUpload(r)) pending.add(r); };
+    const done = (r) => pending.delete(r);
+    page.on('request', start);
+    page.on('requestfinished', done);
+    page.on('requestfailed', done);
+    return {
+      wait: async (timeoutSeconds = 60) => {
+        const end = Date.now() + timeoutSeconds * SECOND;
+        await page.waitForTimeout(1000);
+        while (pending.size && Date.now() < end) await page.waitForTimeout(500);
+        if (pending.size) console.warn(`[uploads] ${pending.size} upload(s) still running after ${timeoutSeconds}s`);
+        page.off('request', start);
+        page.off('requestfinished', done);
+        page.off('requestfailed', done);
+      },
+    };
+  }
+
+  /**
+   * The display name of the logged-in user, read from the "Welcome <name>" label in the admin
+   * header (e.g. "Web Master" on ec12-5, "Helpdesk Elcom" on Mecca). '' when the page has none.
+   */
+  async loggedInUserName() {
+    return this.page.evaluate(() => {
+      for (const el of document.querySelectorAll('body *')) {
+        if (el.children.length === 0 && el.textContent.trim() === 'Welcome') {
+          const name = el.nextElementSibling && el.nextElementSibling.textContent.trim();
+          if (name) return name;
+        }
+      }
+      return '';
+    }).catch(() => '');
+  }
+
   // -------------------------------------------------------------------------
   // Actions
   // -------------------------------------------------------------------------
   async click(key, failureHandling) {
     return this._handle(failureHandling, async () => {
       const el = await this.find(key);
+      // Admin menu links (e.g. Security > Users, Reports) are on the page but stay hidden on
+      // some sites (e.g. ec13-0) when their menu section is not expanded. When a link stays
+      // hidden for 15s, open its address instead of waiting for a click that cannot happen.
+      if (!(await el.waitFor({ state: 'visible', timeout: 15 * SECOND }).then(() => true, () => false))) {
+        const href = await el.evaluate((n) => {
+          const a = n.closest('a');
+          return a && a.href && !/^javascript:/i.test(a.getAttribute('href') || '') ? a.href : '';
+        }).catch(() => '');
+        if (href) {
+          console.warn(`[hidden link] ${normKey(key)} is not visible - opening ${href}`);
+          await this.navigateToUrl(href);
+          await this._afterAction();
+          return;
+        }
+      }
       await el.click({ noWaitAfter: true });
       await this._afterAction();
     });

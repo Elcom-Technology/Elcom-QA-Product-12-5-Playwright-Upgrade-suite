@@ -198,7 +198,10 @@
     ]
   },
   "Articles Elements_Page_Objects/Comments Article/Page_Edit Article Harsha comment - Elcom_Au_2b035a/Mouse over to edit comments article": {
-    "selector": "xpath=//*[@id=\"elementContainerHolder_ctl00_ctl00_ctl00_nestedAreaTwo_contentAreaZone_ContentPlaceHolderMainNoAjax_ctl00_ZoneElementPlaceholder_0\"]/div[3]"
+    "selector": "xpath=//*[@id=\"elementContainerHolder_ctl00_ctl00_ctl00_nestedAreaTwo_contentAreaZone_ContentPlaceHolderMainNoAjax_ctl00_ZoneElementPlaceholder_0\"]/div[3]",
+    "fallbacks": [
+      "css=div.hoverPlaceHolder"
+    ]
   },
   "Articles Elements_Page_Objects/Comments Article/Page_Edit Article Harsha comment - Elcom_Au_2b035a/a_Add": {
     "selector": "xpath=//a[@id='ctl00_ctl00_ctl00_nestedAreaTwo_contentAreaZone_ContentPlaceHolderMainNoAjax_ctl00_NewElementAddButton']",
@@ -2987,7 +2990,7 @@
     ]
   },
   "Latest test objects/Page_Form with Calculator2477242731870400  _0b398d/input_Enter Second Number_UserField1109_24035": {
-    "selector": "xpath=(//*[@class='col-form-label'])[2]/following-sibling::*",
+    "selector": "xpath=(//*[@class='col-form-label'])[2]/following-sibling::input[not(@type='hidden')]",
     "fallbacks": [
       "css=#UserField1109_24035",
       "xpath=//input[@id='UserField1109_24035']",
@@ -2996,7 +2999,7 @@
     ]
   },
   "Latest test objects/Page_Form with Calculator2477242731870400  _0b398d/input_Single Line Text_UserField1109_24034": {
-    "selector": "xpath=(//*[@class='col-form-label'])[1]/following-sibling::*",
+    "selector": "xpath=(//*[@class='col-form-label'])[1]/following-sibling::input[not(@type='hidden')]",
     "fallbacks": [
       "css=#UserField1109_24034",
       "xpath=//input[@id='UserField1109_24034']",

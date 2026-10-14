@@ -15,6 +15,7 @@ module.exports = async function run(web) {
   await web.click('DocumentManager _PageObjects/Click Folder field/Click folder field');
   await web.setText('DocumentManager _PageObjects/Click Folder field/Click folder field', 'Elcom_Automation_Folder');
   await web.click('DocumentManager _PageObjects/Click folder suggestion/Click folder suggestion');
+  const uploads = web.trackUploads();
   // Groovy helper "createTimeStampedImage" is provided by the shared library.
   let Doc1Path = createTimeStampedFile( resource('DocumentManager_Documents/Test Automation Doc 1.docx'), 'Test Automation Doc 1' );
   await web.uploadFile('DocumentManager _PageObjects/1st document uplaod/1st doc upload', Doc1Path );
@@ -25,6 +26,9 @@ module.exports = async function run(web) {
   let Doc3Path = createTimeStampedFile( resource('DocumentManager_Documents/Test Automation Doc 3.docx'), 'Test Automation Doc 3' );
   await web.uploadFile('DocumentManager _PageObjects/document upload/Document upload 3', Doc3Path );
   await web.setText('DocumentManager _PageObjects/Description for upload/Description 3', 'Test Document 3');
+  // The three files upload in the background; wait for them before clicking Upload
+  // (on slower sites such as Mecca, clicking earlier aborts the uploads and saves nothing).
+  await uploads.wait();
   await web.executeJavaScript('window.scrollTo(0, 0);', null);
   await web.click('DocumentManager _PageObjects/Click Upload button/Click Upload button');
   await web.click('Assertion_PageObjects/Click Search doc');

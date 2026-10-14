@@ -24,7 +24,7 @@ module.exports = async function run(web) {
     // itself up twice and every Form Items click adds two items), then wait for it to reload
     // its data after Create Form so Form Items clicks are not lost.
     await web.page.waitForLoadState('networkidle').catch(() => {});
-    const designerReady = web.page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 60 * 1000 });
+    const designerReady = web.waitForFormDesigner();
     await web.click('Form_Page_Objects/Forms Object/Form with Panel/CreateForm', 'OPTIONAL');
     await designerReady;
     await web.delay(1);
@@ -50,7 +50,7 @@ module.exports = async function run(web) {
   await expect(designer.getByText('Single Line Text', { exact: true }), 'one Single Line Text field').toHaveCount(1);
   // Same as TC9769: wait for the designer to reload after "Save Designer Changes" - publishing
   // before that finishes saves every field a second time.
-  const reloaded = web.page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 60 * 1000 });
+  const reloaded = web.waitForFormDesigner();
   await web.click('Form_Page_Objects/Forms Object/Form with Panel/Page_Edit Module - Elcom Test Folder Harsha_829aab/input_ctl07ctl07easyCommit');
   await reloaded;
   await web.delay(2);

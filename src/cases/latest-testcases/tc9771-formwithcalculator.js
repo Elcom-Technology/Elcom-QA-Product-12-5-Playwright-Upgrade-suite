@@ -26,7 +26,7 @@ module.exports = async function run(web) {
   //   (GetExistingFields) after Create Form so Form Items clicks are not lost.
   if (await web.verifyElementPresent('Form_Page_Objects/Forms Object/Form with Panel/CreateForm', 30, 'OPTIONAL')) {
     await web.page.waitForLoadState('networkidle').catch(() => {});
-    const designerReady = web.page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 60 * 1000 });
+    const designerReady = web.waitForFormDesigner();
     await web.click('Form_Page_Objects/Forms Object/Form with Panel/CreateForm', 'OPTIONAL');
     await designerReady;
     await web.delay(1);
@@ -65,7 +65,7 @@ module.exports = async function run(web) {
   // "Save Designer Changes" reloads the designer in place; publishing before that reload has
   // finished saves every field a second time. Wait for it, then publish and wait for Publish
   // to leave the editor page.
-  const reloaded = web.page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 60 * 1000 });
+  const reloaded = web.waitForFormDesigner();
   await web.click('Latest test objects/Page_Edit Module  Deployment Site/input_Click to edit_ctl07ctl07easyCommit (2)');
   await reloaded;
   await web.delay(2);

@@ -7,9 +7,8 @@ module.exports = async function run(web) {
   const { callTestCase } = require('../index');
   await callTestCase(web, 'Common_TestCases/Login - site');
   await web.maximizeWindow();
-  await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Backend admin page/burger menu click');
-  await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Navigate to Publishing/Click Publishing');
-  await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Naviagte to publishing Folders/Click Folders');
+  // Burger menu -> Publishing -> Folders (or straight to the folders page, see openFoldersPage)
+  await web.openFoldersPage();
   await web.click('Security_PageObjects/Add User/Navigate to Admin New user Menu/span_Security');
   await web.click('Security_PageObjects/Add User/Navigate to Admin New user Menu/span_Users');
   await web.click('Security_PageObjects/Add User/Add New User/input_Users_ctl00ContentPlaceHolderMainNoAj_f78e11');
@@ -36,10 +35,10 @@ module.exports = async function run(web) {
   await web.delay(3);
   await web.executeJavaScript('window.scrollTo(0, 0);', null);
   await web.click('Security_PageObjects/Add User/Add New User/a_Save');
-  await web.setText('Security_PageObjects/Add User/Add User to Group/input_Choose Groups_ctl00ContentPlaceHolder_a1d030', 'sys');
-  await web.waitForElementVisible('Security_PageObjects/Add User/Add User to Group/SelectfromDropdwon', 5);
-  await web.click('Security_PageObjects/Add User/Add User to Group/SelectfromDropdwon');
-  await web.waitForElementClickable('Security_PageObjects/Add User/Add User to Group/li_System', 5);
+  // Add the user to the System group; sites without one (e.g. Mecca) use an Admin group instead.
+  const group = await web.pickFromDropdown('Security_PageObjects/Add User/Add User to Group/input_Choose Groups_ctl00ContentPlaceHolder_a1d030',
+    '[id$="multiUserGroups_selGroupSelector_cboGroups_DropDown"]', ['sys', 'admin']);
+  expect(group, 'a System or Admin group exists on this site to add the user to').not.toBe('');
   await web.click('Security_PageObjects/Add User/Add User to Group/input_Clear_ctl00ContentPlaceHolderMainNoAj_31612c');
   await web.click('Security_PageObjects/Add User/Add User to Group/input_Add User to Groups_ctl00ContentPlaceH_944e29');
   await web.delay(5);

@@ -26,7 +26,7 @@ module.exports = async function run(web) {
   //   (GetExistingFields) after Create Form so Form Items clicks are not lost.
   if (await web.verifyElementPresent('Form_Page_Objects/Forms Object/Form with Panel/CreateForm', 30, 'OPTIONAL')) {
     await web.page.waitForLoadState('networkidle').catch(() => {});
-    const designerReady = web.page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 60 * 1000 });
+    const designerReady = web.waitForFormDesigner();
     await web.click('Form_Page_Objects/Forms Object/Form with Panel/CreateForm', 'OPTIONAL');
     await designerReady;
     await web.delay(1);
@@ -61,7 +61,7 @@ module.exports = async function run(web) {
   await web.click('Latest test objects/Page_Edit Module  Deployment Site/a_OK (2)');
   // Wait for the designer to reload after "Save Designer Changes" before publishing (publishing
   // earlier saves every field a second time), then wait for Publish to leave the editor page.
-  const reloaded = web.page.waitForResponse((r) => /GetExistingFields/i.test(r.url()), { timeout: 60 * 1000 });
+  const reloaded = web.waitForFormDesigner();
   await web.click('Latest test objects/Page_Edit Module  Deployment Site/input_Click to edit_ctl07ctl07easyCommit (2)');
   await reloaded;
   await web.delay(2);
@@ -92,7 +92,9 @@ module.exports = async function run(web) {
   await web.click('Latest test objects/Page_Edit Module  Deployment Site/input_Notes_PublishButton');
   await web.setText('Latest test objects/Page_Form with Calculator2477242731870400  _0b398d/input_Single Line Text_UserField1109_24034', '1000');
   await web.setText('Latest test objects/Page_Form with Calculator2477242731870400  _0b398d/input_Enter Second Number_UserField1109_24035', '500');
-  await web.scrollToElement('Latest test objects/Page_Form with Calculator2477242731870400  _0b398d/nav_Section Menu', 2);
+  // Scroll the form into view via the section menu; some site designs (e.g. Mecca) have no
+  // section menu, so this step is optional.
+  await web.scrollToElement('Latest test objects/Page_Form with Calculator2477242731870400  _0b398d/nav_Section Menu', 2, 'OPTIONAL');
   // The calculation runs when the second number field is left; check Result = 1000 + 500.
   await web.page.keyboard.press('Tab');
   await expect.poll(async () => (await web.find('Assertion_PageObjects/Form Calculator Result')).inputValue(),
