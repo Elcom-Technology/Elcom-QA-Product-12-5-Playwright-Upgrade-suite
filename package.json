@@ -18,5 +18,8 @@
     "@playwright/test": "^1.55.0",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }
