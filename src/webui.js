@@ -120,7 +120,18 @@ class WebUI {
   async openBrowser(url = '') { if (url) await this.navigateToUrl(url); }
   async closeBrowser() { /* Playwright closes the browser after each test */ }
   async maximizeWindow() { /* viewport size is set in playwright.config.js */ }
-  async navigateToUrl(url) { await this.page.goto(String(url)); }
+  async navigateToUrl(url) {
+    try {
+      await this.page.goto(String(url));
+    } catch (err) {
+      // A page load started by the previous click (e.g. Dashboard in TC9777) can still be
+      // running and interrupt this one; let it finish, then open the address again.
+      if (!/interrupted by another navigation/i.test(err.message)) throw err;
+      console.warn(`[navigate] opening ${url} was interrupted by another page load - trying again`);
+      await this.page.waitForLoadState('load').catch(() => {});
+      await this.page.goto(String(url));
+    }
+  }
   async refresh() { await this.page.reload(); }
   async getUrl() { return this.page.url(); }
   async getWindowTitle() {

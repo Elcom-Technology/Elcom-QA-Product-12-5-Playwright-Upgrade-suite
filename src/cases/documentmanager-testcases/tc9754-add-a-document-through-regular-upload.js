@@ -1,7 +1,7 @@
 // Converted from Katalon test case: Test Cases/DocumentManager_TestCases/TC9754 - Add a document through regular upload
 // Original script: Scripts/DocumentManager_TestCases/TC9754 - Add a document through regular upload/Script1705991336717.groovy
 const { expect } = require('@playwright/test');
-const { UPLOAD_DIR, containsIgnoreCase, copyFile, formatDate, resource } = require('../../helpers');
+const { G, UPLOAD_DIR, containsIgnoreCase, copyFile, formatDate, resource } = require('../../helpers');
 
 module.exports = async function run(web) {
   const { callTestCase } = require('../index');
@@ -21,6 +21,9 @@ module.exports = async function run(web) {
   let timeStamp = formatDate('yyyyMMdd_HHmmss');
   let sourcePath = resource('DocumentManager_Documents/Test Automation doc.docx');
   let newFileName = "Test Automation doc_" + timeStamp + ".docx";
+  // TC9753 / TC9752 search for this exact file: a search for "Test Automation doc" also lists
+  // every "Test Automation Doc 1/2/3" file from TC9755, which can push this one off page 1.
+  G.uploadeddocument = "Test Automation doc_" + timeStamp;
   let targetPath = UPLOAD_DIR + '/' + newFileName;
   copyFile(sourcePath, targetPath);
   await web.uploadFile('DocumentManager _PageObjects/Choose file/Choose file upload', targetPath );
