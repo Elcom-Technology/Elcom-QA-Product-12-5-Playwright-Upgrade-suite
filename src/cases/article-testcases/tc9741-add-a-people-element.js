@@ -14,7 +14,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'People Element');
   await web.click('Form_Page_Objects/Forms Object/Form FIeld Submission/Page_Article Attributes - Elcom_Automation__77e2de/a_Draft');
   await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Scroll and click on Continue/Click Continue');
-  await web.click('Articles Elements_Page_Objects/people/Page_Edit Article People  Deployment Site/a_Add');
+  await web.openAddElementWindow('Articles Elements_Page_Objects/people/Page_Edit Article People  Deployment Site/a_Add');
   await web.click('Articles Elements_Page_Objects/people/Page_Edit Article People  Deployment Site/li_All');
   await web.setText('Articles Elements_Page_Objects/people/Page_Edit Article People  Deployment Site/input_Filter elements list_element-filter-field', 'peopl');
   await web.click('Articles Elements_Page_Objects/people/Page_Edit Article People  Deployment Site/span_People');

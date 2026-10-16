@@ -12,7 +12,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Test');
   await web.click('Articles Elements_Page_Objects/Event quick search/Page_Article Attributes  Deployment Site/a_Draft');
   await web.click('Articles Elements_Page_Objects/Event quick search/Page_Select Content Template  Deployment Site/input_Opens in new window_ctl00ContentPlace_3f09f4');
-  await web.click('Articles Elements_Page_Objects/Event quick search/Page_Edit Article Event/a_Add');
+  await web.openAddElementWindow('Articles Elements_Page_Objects/Event quick search/Page_Edit Article Event/a_Add');
   await web.click('Articles Elements_Page_Objects/Event quick search/Page_Edit Article Event/li_All');
   await web.setText('Articles Elements_Page_Objects/Event quick search/Page_Edit Article Event/input_Filter elements list_element-filter-field', 'event');
   await web.executeJavaScript('window.scrollTo(0, 600);', null);

@@ -12,7 +12,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Test');
   await web.click('Articles Elements_Page_Objects/Delete Article/Page_Article Attributes - Elcom_Automation__77e2de/a_Draft');
   await web.click('Articles Elements_Page_Objects/Delete Article/Page_Select Content Template - Elcom_Automa_6244da/input_ctl00ContentPlaceHolderMainNoAjaxbtnS_dfc885');
-  await web.click('Articles Elements_Page_Objects/Delete Article/Page_Edit Article Test Article to Add and D_abb44c/a_Add');
+  await web.openAddElementWindow('Articles Elements_Page_Objects/Delete Article/Page_Edit Article Test Article to Add and D_abb44c/a_Add');
   await web.click('Articles Elements_Page_Objects/Delete Article/Page_Edit Article Test Article to Add and D_abb44c/span_Content Editor');
   await web.click('Articles Elements_Page_Objects/Delete Article/Page_Edit Article Test Article to Add and D_abb44c/a_Publish');
   await web.click('Articles Elements_Page_Objects/Delete Article/Page_Test Article to Add and Delete - Elcom_9ecc60/a_Delete');

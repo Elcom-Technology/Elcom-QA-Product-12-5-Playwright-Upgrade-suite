@@ -12,7 +12,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Test');
   await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Scroll to Click on Draft in Mainatain Article page/Click Draft');
   await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Scroll and click on Continue/Click Continue');
-  await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Scroll and go to add icon/Click Add icon');
+  await web.openAddElementWindow('Common Article_Forms_Page_Objects/Publishing Folder/Scroll and go to add icon/Click Add icon');
   await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Select Content editor/Click Content Editor');
   await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Under Common Tab Content editor element is displayed/Content editor is displayed');
   await web.switchToFrame('Common Article_Forms_Page_Objects/Publishing Folder/Write the Text in the content editor/Content', 5);

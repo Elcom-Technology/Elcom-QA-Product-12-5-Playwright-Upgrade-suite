@@ -12,7 +12,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Test');
   await web.click('Article_PageObjects/Activate Article/Page_Article Attributes  Deployment Site/a_Draft');
   await web.click('Article_PageObjects/Activate Article/Page_Select Content Template  Deployment Site/input_Opens in new window_ctl00ContentPlace_3f09f4');
-  await web.click('Article_PageObjects/Activate Article/Page_Edit Article Article to decativate  De_533e05/a_Add');
+  await web.openAddElementWindow('Article_PageObjects/Activate Article/Page_Edit Article Article to decativate  De_533e05/a_Add');
   await web.click('Article_PageObjects/Activate Article/Page_Edit Article Article to decativate  De_533e05/span_Content Editor');
   await web.click('Article_PageObjects/Activate Article/Page_Edit Article Article to decativate  De_533e05/a_Publish');
   await web.click('Article_PageObjects/Activate Article/Page_Article to decativate  Deployment Site/a_Folder');

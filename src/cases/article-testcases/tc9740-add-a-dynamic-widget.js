@@ -12,7 +12,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Test');
   await web.click('Articles Elements_Page_Objects/Dynamic widget article element/Page_Article Attributes - Elcom_Automation__77e2de/a_Draft');
   await web.click('Articles Elements_Page_Objects/Dynamic widget article element (1)/Page_Select Content Template - Elcom_Automa_6244da/input_ctl00ContentPlaceHolderMainNoAjaxbtnS_dfc885');
-  await web.click('Articles Elements_Page_Objects/Dynamic widget article element/Page_Edit Article Dynamic widget - Elcom_Au_d35a12/a_Add');
+  await web.openAddElementWindow('Articles Elements_Page_Objects/Dynamic widget article element/Page_Edit Article Dynamic widget - Elcom_Au_d35a12/a_Add');
   await web.click('Articles Elements_Page_Objects/Dynamic widget article element/Page_Edit Article Dynamic widget - Elcom_Au_d35a12/li_Common');
   await web.click('Articles Elements_Page_Objects/Dynamic widget article element/Page_Edit Article Dynamic widget - Elcom_Au_d35a12/ALL_Option' );
   await web.setText('Articles Elements_Page_Objects/Dynamic widget article element/Page_Edit Article Dynamic widget - Elcom_Au_d35a12/Inputfield' ,'Dynamic Widget');

@@ -12,7 +12,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Test');
   await web.click('Articles Elements_Page_Objects/Taxonomy Search/Page_Article Attributes  Deployment Site/a_Draft');
   await web.click('Articles Elements_Page_Objects/Taxonomy Search/Page_Select Content Template  Deployment Site/input_Opens in new window_ctl00ContentPlace_3f09f4');
-  await web.click('Articles Elements_Page_Objects/Taxonomy Search/Page_Edit Article Taxonomy Search Element  _c766ac/a_Add');
+  await web.openAddElementWindow('Articles Elements_Page_Objects/Taxonomy Search/Page_Edit Article Taxonomy Search Element  _c766ac/a_Add');
   await web.click('Articles Elements_Page_Objects/Taxonomy Search/Page_Edit Article Taxonomy Search Element  _c766ac/li_All');
   await web.setText('Articles Elements_Page_Objects/Taxonomy Search/Page_Edit Article Taxonomy Search Element  _c766ac/input_Filter elements list_element-filter-field', 'tax');
   await web.click('Articles Elements_Page_Objects/Taxonomy Search/Page_Edit Article Taxonomy Search Element  _c766ac/span_Taxonomy Search');

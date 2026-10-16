@@ -14,7 +14,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Acknowledgement Element');
   await web.click('Latest test objects/Page_Article Attributes - Elcom_Automation__77e2de/a_Draft');
   await web.click('Latest test objects/Page_Select Content Template  Deployment Site/input_Opens in new window_ctl00ContentPlace_3f09f4');
-  await web.click('Latest test objects/Page_Edit Article Add a Acknowledgement 298_dfe2ba/a_Add');
+  await web.openAddElementWindow('Latest test objects/Page_Edit Article Add a Acknowledgement 298_dfe2ba/a_Add');
   await web.setText('Latest test objects/Page_Edit Article Add a Acknowledgement 298_dfe2ba/input_Filter elements list_element-filter-field', '');
   await web.click('Latest test objects/Page_Edit Article Add a Acknowledgement 298_dfe2ba/li_Acknowledge');
   await web.click('Latest test objects/Page_Edit Article Add a Acknowledgement 298_dfe2ba/a_Acknowledge                              _210c4b');

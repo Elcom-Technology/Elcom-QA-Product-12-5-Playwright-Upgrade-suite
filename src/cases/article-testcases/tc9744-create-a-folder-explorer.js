@@ -12,7 +12,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Test');
   await web.click('Articles Elements_Page_Objects/Folder Explorer/Page_Article Attributes  Deployment Site/a_Draft');
   await web.click('Common Article_Forms_Page_Objects/Publishing Folder/Scroll and click on Continue/Click Continue');
-  await web.click('Articles Elements_Page_Objects/Folder Explorer/Page_Edit Article Folder Explorer  Deployment Site/a_Add');
+  await web.openAddElementWindow('Articles Elements_Page_Objects/Folder Explorer/Page_Edit Article Folder Explorer  Deployment Site/a_Add');
   await web.click('Articles Elements_Page_Objects/Folder Explorer/Page_Edit Article Folder Explorer  Deployment Site/li_All');
   await web.setText('Articles Elements_Page_Objects/Folder Explorer/Page_Edit Article Folder Explorer  Deployment Site/input_Filter elements list_element-filter-field', 'Folder Explorer');
   await web.click('Articles Elements_Page_Objects/Folder Explorer/Page_Edit Article Folder Explorer  Deployment Site/span_Folder Explorer');

@@ -73,7 +73,10 @@ class WebUI {
     const root = this._root(o);
     const primary = root.locator(o.selector).first();
     try {
-      await primary.waitFor({ state, timeout: timeoutMs });
+      // A Katalon timeout of 0 means "check once, don't wait", but Playwright treats 0 as
+      // "wait forever" (on Mecca TC9737's cookie-button check hung until the test timed out),
+      // so check with the shortest possible wait instead.
+      await primary.waitFor({ state, timeout: timeoutMs > 0 ? timeoutMs : 1 });
       return primary;
     } catch (err) {
       for (const sel of o.fallbacks || []) {
@@ -171,7 +174,8 @@ class WebUI {
   /**
    * Burger menu -> Publishing -> Folders, as in the Katalon scripts.
    * Some sites (profile "folderspagefallback": true) have no burger menu; there, when it is
-   * not on the page, go straight to <domainname>folders.aspx instead.
+   * not on the page, click the Folder icon in the admin bar instead, or go straight to
+   * <domainname>folders.aspx when there is no Folder icon either.
    */
   async openFoldersPage() {
     const burger = 'Common Article_Forms_Page_Objects/Publishing Folder/Backend admin page/burger menu click';
@@ -181,8 +185,15 @@ class WebUI {
       const found = await this._root(o).locator(o.selector).first()
         .waitFor({ state: 'visible', timeout: 5 * SECOND }).then(() => true, () => false);
       if (!found) {
+        const folderIcon = this.page.locator('a[href*="folders.aspx" i]').filter({ visible: true }).first();
+        if (await folderIcon.count()) {
+          console.log('[folders page] burger menu not on this site - clicking the Folder icon');
+          await folderIcon.click({ noWaitAfter: true });
+          await this._afterAction();
+          return;
+        }
         const url = new URL('folders.aspx', G.domainname).href;
-        console.log(`[folders page] burger menu not on this site - going to ${url}`);
+        console.log(`[folders page] burger menu and Folder icon not on this site - going to ${url}`);
         await this.navigateToUrl(url);
         return;
       }
@@ -190,6 +201,23 @@ class WebUI {
     await this.click(burger);
     await this.click('Common Article_Forms_Page_Objects/Publishing Folder/Navigate to Publishing/Click Publishing');
     await this.click('Common Article_Forms_Page_Objects/Publishing Folder/Naviagte to publishing Folders/Click Folders');
+  }
+
+  /**
+   * Clicks the + (Add element) button on the article edit page and makes sure the Add Element
+   * window (#page-element-list) opens. On slower sites (e.g. Tamworth, Mecca) the first click can
+   * land before the edit page is ready and does nothing, so when the window has not opened
+   * within 10s the button is clicked again (3 tries). Never fails by itself: if the window still
+   * has not opened, the next step reports it as before.
+   */
+  async openAddElementWindow(addKey) {
+    const list = this.page.locator('#page-element-list').first();
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await this.click(addKey);
+      if (await list.waitFor({ state: 'visible', timeout: 10 * SECOND }).then(() => true, () => false)) return;
+      console.warn(`[add element] Add Element window did not open after click ${attempt} - ${attempt < 3 ? 'clicking + again' : 'giving up'}`);
+      await this.page.waitForLoadState('load').catch(() => {});
+    }
   }
 
   /**
@@ -231,35 +259,6 @@ class WebUI {
       console.warn(`[picker] nothing matching "${search}" on this site`);
     }
     return '';
-  }
-
-  /**
-   * Starts watching the background uploads (Telerik "rau" requests) that picking files in a
-   * Document / Image Manager upload box sends. Call it before picking the files; then call
-   * wait() before clicking the page's Upload button. Clicking Upload while an upload is still
-   * running aborts it and saves nothing, which happens on slower sites (e.g. Mecca). wait()
-   * never fails the test: it returns once no upload is running, or after timeoutSeconds.
-   */
-  trackUploads() {
-    const page = this.page;
-    const pending = new Set();
-    const isUpload = (r) => /WebResource.axd?type=rau/i.test(r.url());
-    const start = (r) => { if (isUpload(r)) pending.add(r); };
-    const done = (r) => pending.delete(r);
-    page.on('request', start);
-    page.on('requestfinished', done);
-    page.on('requestfailed', done);
-    return {
-      wait: async (timeoutSeconds = 60) => {
-        const end = Date.now() + timeoutSeconds * SECOND;
-        await page.waitForTimeout(1000);
-        while (pending.size && Date.now() < end) await page.waitForTimeout(500);
-        if (pending.size) console.warn(`[uploads] ${pending.size} upload(s) still running after ${timeoutSeconds}s`);
-        page.off('request', start);
-        page.off('requestfinished', done);
-        page.off('requestfailed', done);
-      },
-    };
   }
 
   /**

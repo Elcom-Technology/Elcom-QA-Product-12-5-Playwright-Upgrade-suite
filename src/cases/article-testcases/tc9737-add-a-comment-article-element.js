@@ -12,7 +12,7 @@ module.exports = async function run(web) {
   await web.setText('Forms_PageObjects/Form FIeld Submission/Page_Edit Article Form field Submission - E_1212d7/Brief description', 'Test');
   await web.click('Articles Elements_Page_Objects/Comments Article/Page_Article Attributes - Elcom_Automation__77e2de/a_Draft');
   await web.click('Articles Elements_Page_Objects/Comments Article/Page_Select Content Template - Elcom_Automa_6244da/input_ctl00ContentPlaceHolderMainNoAjaxbtnS_dfc885');
-  await web.click('Articles Elements_Page_Objects/Comments Article/Page_Edit Article Harsha comment - Elcom_Au_2b035a/a_Add');
+  await web.openAddElementWindow('Articles Elements_Page_Objects/Comments Article/Page_Edit Article Harsha comment - Elcom_Au_2b035a/a_Add');
   await web.click('Articles Elements_Page_Objects/Comments Article/Page_Edit Article Harsha comment - Elcom_Au_2b035a/li_All');
   await web.click('Articles Elements_Page_Objects/Comments Article/Page_Edit Article Harsha comment - Elcom_Au_2b035a/span_Comments');
   if (await web.verifyElementPresent('Articles Elements_Page_Objects/Comments Article/Page_Edit Article Harsha comment - Elcom_Au_2b035a/ackbutton' , 0, 'OPTIONAL')) {
